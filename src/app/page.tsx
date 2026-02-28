@@ -27,7 +27,6 @@ export default function Home() {
       <Footer />
       <WhatsAppFloat
         phoneNumber="918437579399"
-
       />
     </main>
   );

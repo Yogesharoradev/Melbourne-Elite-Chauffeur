@@ -178,7 +178,8 @@ export function HeroSection() {
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [bookingId, setBookingId] = useState<string | null>(null);
 
-    const [showBookingModal, setShowBookingModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
     const {
         selectedCar,
@@ -254,25 +255,38 @@ export function HeroSection() {
         guestCount
     ]);
 
-    const fetchSuggestions = useCallback(async (
-        query: string,
-        setSuggestions: (s: Suggestion[]) => void,
-        setLoading: (b: boolean) => void
-    ) => {
-        if (!query || query.length < 2) {
-            setSuggestions([]);
-            return;
-        }
+    const fetchSuggestions = useCallback(async (query: string, setSuggestions: React.Dispatch<React.SetStateAction<any>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
+        if (!query || query.length < 3) return;
+
         setLoading(true);
         try {
             const bbox = "144.5,-38.5,145.5,-37.5";
-            const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&bbox=${bbox}&limit=5&types=address,place,poi`
-            );
+
+            // FIXED: Removed space after 'places/'
+            const url = new URL(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`);
+            url.searchParams.append('access_token', process.env.NEXT_PUBLIC_MAPBOX_TOKEN!);
+            url.searchParams.append('bbox', bbox);
+            url.searchParams.append('limit', '5');
+            url.searchParams.append('types', 'address,place,poi');
+            url.searchParams.append('country', 'AU');
+            url.searchParams.append('proximity', '144.9631,-37.8136'); // Melbourne center - helps prioritize closer results
+            url.searchParams.append('autocomplete', 'true');
+
+            const response = await fetch(url.toString());
             const data = await response.json();
-            setSuggestions(data.features || []);
+
+            // Better filtering - keep all relevant results
+            const filtered = data.features?.filter((f: any) => {
+                const types = f.place_type || [];
+                return types.includes('address') ||
+                    types.includes('place') ||
+                    types.includes('poi') ||
+                    types.includes('neighborhood');
+            }) || [];
+
+            setSuggestions(filtered);
         } catch (error) {
-            console.error("Error fetching suggestions:", error);
+            console.error("Error:", error);
             setSuggestions([]);
         } finally {
             setLoading(false);
@@ -599,19 +613,30 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                             No addresses found.
                                         </div>
                                     ) : (
-                                        airportSuggestions.map((suggestion) => (
-                                            <button
-                                                key={suggestion.place_name}
-                                                onClick={() => {
-                                                    setAirportAddress(suggestion.place_name);
-                                                    setShowAirportSuggestions(false);
-                                                }}
-                                                className="w-full px-4 py-3 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
-                                            >
-                                                <span className="pr-4 line-clamp-2">{suggestion.place_name}</span>
-                                                <Check className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
-                                            </button>
-                                        ))
+                                        // In renderAirportForm, update the suggestions map:
+                                        airportSuggestions.map((suggestion: any) => {
+                                            // Extract parts of address
+                                            const mainText = suggestion.text || ''; // Street number + name
+                                            const placeName = suggestion.place_name || ''; // Full address
+                                            const suburb = suggestion.context?.find((c: any) => c.id.includes('place'))?.text || '';
+                                            const postcode = suggestion.context?.find((c: any) => c.id.includes('postcode'))?.text || '';
+
+                                            return (
+                                                <button
+                                                    key={suggestion.id || suggestion.place_name}
+                                                    onClick={() => {
+                                                        setAirportAddress(placeName); // Use full address
+                                                        setShowAirportSuggestions(false);
+                                                    }}
+                                                    className="w-full px-4 py-3 text-sm hover:bg-primary/10 hover:text-primary transition-colors text-left border-b border-white/5 last:border-0"
+                                                >
+                                                    <div className="font-medium">{mainText}</div>
+                                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                                        {suburb}{postcode ? `, ${postcode}` : ''}
+                                                    </div>
+                                                </button>
+                                            );
+                                        })
                                     )}
                                 </div>
                             </motion.div>
@@ -1070,13 +1095,13 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                 >
                     {/* Service Type Tabs */}
                     <div className="flex justify-center mb-6">
-                        <div className="inline-flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl">
+                        <div className="inline-grid grid-cols-2 sm:inline-flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl gap-1.5">
                             {serviceTabs.map((tab) => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveService(tab.id)}
                                     className={cn(
-                                        "relative px-4 md:px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2",
+                                        "relative px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2",
                                         activeService === tab.id
                                             ? "text-white"
                                             : "text-muted-foreground hover:text-foreground"
@@ -1091,18 +1116,12 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                     )}
                                     <span className="relative z-10 flex items-center gap-2">
                                         <tab.icon className="w-4 h-4" />
-                                        <span className="hidden md:inline">{tab.label}</span>
-                                        <span className="md:hidden">
-                                            {tab.id === "airport" ? "Airport" :
-                                                tab.id === "distance" ? "Distance" :
-                                                    tab.id === "hourly" ? "Hourly" : "Special"}
-                                        </span>
+                                        <span>{tab.label}</span>
                                     </span>
                                 </button>
                             ))}
                         </div>
                     </div>
-
                     {/* Main Booking Card */}
                     <Card className="glass-card relative z-20 mx-auto p-6 md:p-8 rounded-3xl bg-background/60 backdrop-blur-xl border-white/10 shadow-2xl">
                         <AnimatePresence mode="wait">

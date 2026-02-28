@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, MessageCircle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
 interface WhatsAppFloatProps {
     phoneNumber: string;
@@ -12,11 +11,29 @@ interface WhatsAppFloatProps {
 
 const DEFAULT_MESSAGE = "Hi, I need a luxury chauffeur ride. Can you help me with booking?";
 
+export const OPEN_WHATSAPP_EVENT = "openWhatsAppChat";
+
 export function WhatsAppFloat({
     phoneNumber
 }: WhatsAppFloatProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [message, setMessage] = useState(DEFAULT_MESSAGE);
+
+    // Listen for custom event to open chat
+    useEffect(() => {
+        const handleOpenEvent = (e: CustomEvent<{ message?: string }>) => {
+            if (e.detail?.message) {
+                setMessage(e.detail.message);
+            }
+            setIsOpen(true);
+        };
+
+        window.addEventListener(OPEN_WHATSAPP_EVENT, handleOpenEvent as EventListener);
+
+        return () => {
+            window.removeEventListener(OPEN_WHATSAPP_EVENT, handleOpenEvent as EventListener);
+        };
+    }, []);
 
     const handleSend = () => {
         const text = message.trim();
@@ -131,4 +148,10 @@ export function WhatsAppFloat({
             </AnimatePresence>
         </div>
     );
+}
+
+export function openWhatsAppChat(message?: string) {
+    window.dispatchEvent(new CustomEvent(OPEN_WHATSAPP_EVENT, {
+        detail: { message }
+    }));
 }

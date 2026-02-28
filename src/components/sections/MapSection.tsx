@@ -4,6 +4,15 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 export function MapSection() {
+    const scrollToHero = () => {
+        const heroSection = document.getElementById('booking-widget');
+        if (heroSection) {
+            heroSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    };
     return (
         <section className="py-24 bg-background relative border-t border-border/10">
             <div className="container mx-auto px-6 max-w-7xl">
@@ -50,7 +59,7 @@ export function MapSection() {
                         </p>
 
                         <div className="pt-4">
-                            <Button className="rounded-full px-8 py-6 text-lg font-semibold shadow-gold relative overflow-hidden group">
+                            <Button onClick={() => scrollToHero()} className="rounded-full px-8 py-6 text-lg font-semibold shadow-gold relative overflow-hidden group">
                                 <span className="relative z-10 w-full text-center">Book Now</span>
                                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                             </Button>
