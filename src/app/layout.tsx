@@ -14,8 +14,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Lux Rent | Supreme Luxury Car Rentals in Melbourne",
-  description: "Experience elegance and comfort with our premium fleet. Your ultimate luxury drive awaits in Melbourne.",
+  title: `${process.env.NEXT_PUBLIC_APP_NAME} | Supreme Luxury Car Rentals`,
+  description: `Experience elegance and comfort with our premium fleet. Your ultimate luxury drive awaits with ${process.env.NEXT_PUBLIC_APP_NAME}.`,
 };
 
 export default function RootLayout({

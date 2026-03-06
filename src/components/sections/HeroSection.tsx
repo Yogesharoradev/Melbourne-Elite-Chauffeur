@@ -19,12 +19,22 @@ import {
     Sparkles,
     ArrowRightLeft,
     Users,
-    Briefcase
+    Briefcase,
+    Info,
+    Expand
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
 import { useCarSelection, CARS } from "../carSelection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription
+} from "../ui/dialog";
+import { MapPreview } from "../ui/MapPreview";
 
 type ServiceType = "airport" | "distance" | "hourly" | "special";
 
@@ -32,12 +42,12 @@ interface AirportOption {
     code: string;
     name: string;
     type: "pickup" | "dropoff";
+    coords: [number, number];
 }
 
 interface HourlyPackage {
     hours: number;
     label: string;
-    basePrice: number;
 }
 
 interface SpecialOccasion {
@@ -48,17 +58,35 @@ interface SpecialOccasion {
 }
 
 const AIRPORTS: AirportOption[] = [
-    { code: "MEL", name: "Melbourne Airport (Tullamarine)", type: "pickup" },
-    { code: "AVV", name: "Avalon Airport", type: "pickup" },
-    { code: "MEB", name: "Essendon Airport", type: "pickup" },
-];
+    {
+        code: "MEL",
+        name: "Melbourne Airport (Tullamarine)",
+        coords: [144.843, -37.673],
+        type: "pickup"
+    },
+    {
+        code: "AVV",
+        name: "Avalon Airport",
+        coords: [144.468, -38.039],
+        type: "pickup"
+    },
+    {
+        code: "MEB",
+        name: "Essendon Airport",
+        coords: [144.901, -37.728],
+        type: "pickup"
+    }
+]
 
 const HOURLY_PACKAGES: HourlyPackage[] = [
-    { hours: 2, label: "2 Hours", basePrice: 180 },
-    { hours: 4, label: "4 Hours", basePrice: 320 },
-    { hours: 6, label: "6 Hours", basePrice: 450 },
-    { hours: 8, label: "8 Hours", basePrice: 580 },
-    { hours: 12, label: "Full Day (12h)", basePrice: 850 },
+    { hours: 2, label: "2 Hours" },
+    { hours: 3, label: "3 Hours" },
+    { hours: 4, label: "4 Hours" },
+    { hours: 5, label: "5 Hours" },
+    { hours: 6, label: "6 Hours" },
+    { hours: 7, label: "7 Hours" },
+    { hours: 8, label: "8 Hours" },
+    { hours: 12, label: "Full Day (12h)" },
 ];
 
 const SPECIAL_OCCASIONS: SpecialOccasion[] = [
@@ -96,6 +124,7 @@ const SPECIAL_OCCASIONS: SpecialOccasion[] = [
 
 
 
+
 // Debounce hook for API calls
 function useDebounce<T>(value: T, delay: number): T {
     const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -119,6 +148,7 @@ export function HeroSection() {
     const [pickupDate, setPickupDate] = useState("");
     const [pickupTime, setPickupTime] = useState("");
     const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
+    const [estimatedDistance, setEstimatedDistance] = useState<number | null>(null);
 
     // Airport Transfer states
     const [flightType, setFlightType] = useState<"arrival" | "departure">("arrival");
@@ -177,9 +207,13 @@ export function HeroSection() {
     const [error, setError] = useState<string | null>(null);
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [bookingId, setBookingId] = useState<string | null>(null);
+    const [showMapModal, setShowMapModal] = useState(false);
 
-    const [loading, setLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+    const [airportCoords, setAirportCoords] = useState<[number, number] | null>(null)
+    const [fromCoords, setFromCoords] = useState<[number, number] | null>(null)
+    const [toCoords, setToCoords] = useState<[number, number] | null>(null)
+    const [hourlyCoords, setHourlyCoords] = useState<[number, number] | null>(null)
+    const [specialCoords, setSpecialCoords] = useState<[number, number] | null>(null)
 
     const {
         selectedCar,
@@ -198,62 +232,173 @@ export function HeroSection() {
     }, [selectedCar]);
 
 
-    // Price calculation effect
-    useEffect(() => {
-        let price = 0;
+    const RATE_PER_KM = 3.4
+    const AIRPORT_MIN_FARE = 120
+    const DISTANCE_MIN_FARE = 80
 
-        switch (activeService) {
-            case "airport":
-                if (airportAddress) {
-                    price = flightType === "arrival" ? 85 : 75;
-                    if (selectedAirport.code === "AVV") price += 30;
-                    if (selectedAirport.code === "MEB") price += 15;
-                }
-                break;
+    const HOURLY_RATES: Record<string, number> = {
+        economy: 85,
+        business: 95,
+        suv: 90,
+        first: 135,
+        "people-mover": 160,
+        platinum: 200
+    }
 
-            case "distance":
-                if (fromLocation && toLocation) {
-                    price = 65;
-                    const locationsText = (fromLocation + " " + toLocation).toLowerCase();
-                    if (locationsText.includes("airport")) price += 25;
-                    if (locationsText.includes("cbd") || locationsText.includes("city")) price += 15;
-                    if (locationsText.includes("mornington") || locationsText.includes("geelong")) price += 80;
-                    if (tripType === "round-trip") price *= 1.8;
-                }
-                break;
+    const getDistanceKm = async (
+        from: [number, number],
+        to: [number, number]
+    ) => {
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${from[0]},${from[1]};${to[0]},${to[1]}?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
 
-            case "hourly":
-                if (hourlyAddress) {
-                    price = selectedPackage.basePrice;
-                }
-                break;
+        const res = await fetch(url)
+        const data = await res.json()
 
-            case "special":
-                if (specialAddress && occasionDate) {
-                    price = 200;
-                    if (selectedOccasion.id === "wedding") price = 450;
-                    if (selectedOccasion.id === "corporate") price = 350;
-                    if (guestCount > 4) price += (guestCount - 4) * 25;
-                }
-                break;
+
+        if (!data.routes || data.routes.length === 0) return 0
+        const meters = data.routes[0].distance
+        return meters / 1000
+    }
+
+    const calculateAirportPrice = (distanceKm: number) => {
+        const totalDistance = distanceKm * 2
+
+        let price = totalDistance * RATE_PER_KM
+
+        if (price < AIRPORT_MIN_FARE) {
+            price = AIRPORT_MIN_FARE
         }
 
-        setEstimatedPrice(price > 0 ? price : null);
+        return Math.round(price)
+    }
+
+    const calculateDistancePrice = (distanceKm: number) => {
+        let price = distanceKm * RATE_PER_KM
+
+        if (price < DISTANCE_MIN_FARE) {
+            price = DISTANCE_MIN_FARE
+        }
+
+        return Math.round(price)
+    }
+
+    const calculateHourlyPrice = (hours: number) => {
+        const car = getSelectedCarDetails()
+        const hourlyRate = car?.hourlyRate || 85
+
+        const billableHours = Math.max(hours, 3)
+
+        return Math.round(billableHours * hourlyRate)
+    }
+
+    const calculateSpecialPrice = (occasionId: string) => {
+        let baseHours = 4; // Default to 4 hours for special occasions
+        if (occasionId === "wedding") baseHours = 6;
+        if (occasionId === "corporate") baseHours = 5;
+
+        // Use the hourly rate logic to determine base vehicle cost for the duration
+        const car = getSelectedCarDetails()
+        const rate = car?.hourlyRate || 85
+        let price = baseHours * rate;
+
+        // Base price overrides for specific occasions regardless of vehicle, if desired
+        // Or we keep it purely duration-based. The previous logic had flat rates:
+        // if (occasionId === "wedding") price = Math.max(price, 450);
+        // if (occasionId === "corporate") price = Math.max(price, 350);
+
+        if (guestCount > 4) {
+            price += (guestCount - 4) * 25
+        }
+
+        return Math.round(price)
+    }
+
+    useEffect(() => {
+
+        const calculatePrice = async () => {
+
+            let price = 0
+            let distance = 0
+
+            try {
+
+                if (activeService === "airport" && airportCoords) {
+
+                    const airport = selectedAirport.coords
+
+                    let distanceKm
+
+                    if (flightType === "arrival") {
+                        distanceKm = await getDistanceKm(
+                            selectedAirport.coords,
+                            airportCoords
+                        )
+                    } else {
+                        distanceKm = await getDistanceKm(
+                            airportCoords,
+                            selectedAirport.coords
+                        )
+                    }
+
+                    distance = distanceKm
+                    price = calculateAirportPrice(distanceKm)
+
+                }
+
+                if (activeService === "distance" && fromCoords && toCoords) {
+
+                    const distanceKm = await getDistanceKm(
+                        fromCoords,
+                        toCoords
+                    )
+
+                    distance = distanceKm
+                    price = calculateDistancePrice(distanceKm)
+
+                    if (tripType === "round-trip") {
+                        price = price * 1.8
+                        distance = distance * 2
+                    }
+
+                }
+
+                if (activeService === "hourly" && hourlyAddress) {
+
+                    price = calculateHourlyPrice(selectedPackage.hours)
+
+                }
+
+                if (activeService === "special" && specialAddress) {
+
+                    price = calculateSpecialPrice(selectedOccasion.id)
+
+                }
+
+                setEstimatedPrice(Math.round(price))
+                setEstimatedDistance(distance > 0 ? Number(distance.toFixed(1)) : null)
+
+            } catch (err) {
+                console.error("Price calc error", err)
+            }
+
+        }
+
+        calculatePrice()
+
     }, [
+
         activeService,
-        flightType,
-        selectedAirport,
-        airportAddress,
-        fromLocation,
-        toLocation,
+        airportCoords,
+        fromCoords,
+        toCoords,
+        selectedPackage.hours,
+        guestCount,
         tripType,
-        selectedPackage,
+        selectedAirport.code,
+        selectedCar,
         hourlyAddress,
-        selectedOccasion,
         specialAddress,
-        occasionDate,
-        guestCount
-    ]);
+    ])
 
     const fetchSuggestions = useCallback(async (query: string, setSuggestions: React.Dispatch<React.SetStateAction<any>>, setLoading: React.Dispatch<React.SetStateAction<boolean>>) => {
         if (!query || query.length < 3) return;
@@ -492,10 +637,9 @@ ${details.occasion ? `*Occasion:* ${details.occasion}` : ''}
 ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
 *Est. Fare:* A$ ${calculateCarPrice(estimatedPrice || 0)}
 *Date:* ${pickupDate} at ${pickupTime}
-*Est. Fare:* $${estimatedPrice}
 `;
 
-            const whatsappNumber = "+918437579399"; // Update with your number
+            const whatsappNumber = process.env.NEXT_PUBLIC_APP_WHATSAPP; // Update with your number
             window.open(
                 `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
                 "_blank"
@@ -625,8 +769,9 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                                 <button
                                                     key={suggestion.id || suggestion.place_name}
                                                     onClick={() => {
-                                                        setAirportAddress(placeName); // Use full address
-                                                        setShowAirportSuggestions(false);
+                                                        setAirportAddress(placeName)
+                                                        setAirportCoords(suggestion.center)
+                                                        setShowAirportSuggestions(false)
                                                     }}
                                                     className="w-full px-4 py-3 text-sm hover:bg-primary/10 hover:text-primary transition-colors text-left border-b border-white/5 last:border-0"
                                                 >
@@ -706,11 +851,12 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                     {fromSuggestions.length === 0 && fromLocation.length > 0 && !fromLoading ? (
                                         <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
                                     ) : (
-                                        fromSuggestions.map((suggestion) => (
+                                        fromSuggestions.map((suggestion, index) => (
                                             <button
-                                                key={suggestion.place_name}
+                                                key={index}
                                                 onClick={() => {
-                                                    setFromLocation(suggestion.place_name);
+                                                    setFromLocation(suggestion.place_name)
+                                                    setFromCoords(suggestion.center);
                                                     setShowFromSuggestions(false);
                                                 }}
                                                 className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
@@ -760,11 +906,12 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                     {toSuggestions.length === 0 && toLocation.length > 0 && !toLoading ? (
                                         <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
                                     ) : (
-                                        toSuggestions.map((suggestion) => (
+                                        toSuggestions.map((suggestion, index) => (
                                             <button
-                                                key={suggestion.place_name}
+                                                key={index}
                                                 onClick={() => {
-                                                    setToLocation(suggestion.place_name);
+                                                    setToLocation(suggestion.place_name)
+                                                    setToCoords(suggestion.center)
                                                     setShowToSuggestions(false);
                                                 }}
                                                 className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
@@ -803,12 +950,7 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                             )}
                         >
                             <div className="text-sm font-bold">{pkg.label}</div>
-                            <div className={cn(
-                                "text-xs mt-1",
-                                selectedPackage.hours === pkg.hours ? "text-white/80" : "text-muted-foreground"
-                            )}>
-                                From ${pkg.basePrice}
-                            </div>
+
                         </button>
                     ))}
                 </div>
@@ -848,11 +990,13 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                 {hourlySuggestions.length === 0 && hourlyAddress.length > 0 && !hourlyLoading ? (
                                     <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
                                 ) : (
-                                    hourlySuggestions.map((suggestion) => (
+                                    hourlySuggestions.map((suggestion, index) => (
                                         <button
-                                            key={suggestion.place_name}
+                                            key={index}
                                             onClick={() => {
                                                 setHourlyAddress(suggestion.place_name);
+
+                                                setHourlyCoords(suggestion.center)
                                                 setShowHourlySuggestions(false);
                                             }}
                                             className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
@@ -975,11 +1119,12 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                                     {specialSuggestions.length === 0 && specialAddress.length > 0 && !specialLoading ? (
                                         <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
                                     ) : (
-                                        specialSuggestions.map((suggestion) => (
+                                        specialSuggestions.map((suggestion, index) => (
                                             <button
-                                                key={suggestion.place_name}
+                                                key={index}
                                                 onClick={() => {
                                                     setSpecialAddress(suggestion.place_name);
+                                                    setSpecialCoords(suggestion.center);
                                                     setShowSpecialSuggestions(false);
                                                 }}
                                                 className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
@@ -1048,6 +1193,7 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
         <section className="relative min-h-[90vh] flex items-center justify-center pt-24 overflow-hidden">
             {/* Background */}
             <div className="absolute inset-0 z-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src="/IMG_2858.WEBP"
                     alt="Luxury Car Background"
@@ -1091,17 +1237,17 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, delay: 0.2 }}
-                    className="w-full max-w-4xl mt-16 lg:mt-24 relative"
+                    className="w-full max-w-7xl mt-16 lg:mt-24 relative"
                 >
                     {/* Service Type Tabs */}
-                    <div className="flex justify-center mb-6">
-                        <div className="inline-grid grid-cols-2 sm:inline-flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl gap-1.5">
+                    <div className="flex justify-center mb-8 w-full">
+                        <div className="grid grid-cols-2 md:flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl gap-2 w-full md:w-auto">
                             {serviceTabs.map((tab) => (
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveService(tab.id)}
                                     className={cn(
-                                        "relative px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2",
+                                        "relative px-4 py-3 md:px-6 md:py-3.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap",
                                         activeService === tab.id
                                             ? "text-white"
                                             : "text-muted-foreground hover:text-foreground"
@@ -1122,69 +1268,143 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
                             ))}
                         </div>
                     </div>
-                    {/* Main Booking Card */}
-                    <Card className="glass-card relative z-20 mx-auto p-6 md:p-8 rounded-3xl bg-background/60 backdrop-blur-xl border-white/10 shadow-2xl">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={activeService}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-4"
-                            >
-                                {activeService === "airport" && renderAirportForm()}
-                                {activeService === "distance" && renderDistanceForm()}
-                                {activeService === "hourly" && renderHourlyForm()}
-                                {activeService === "special" && renderSpecialForm()}
 
-                                {renderDateTimeFields()}
-                            </motion.div>
-                        </AnimatePresence>
+                    <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 items-start">
+                        {/* Main Booking Card */}
+                        <Card className="glass-card relative z-20 p-6 md:p-8 rounded-3xl bg-background/60 backdrop-blur-xl border-white/10 shadow-2xl">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={activeService}
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="space-y-4"
+                                >
+                                    {activeService === "airport" && renderAirportForm()}
+                                    {activeService === "distance" && renderDistanceForm()}
+                                    {activeService === "hourly" && renderHourlyForm()}
+                                    {activeService === "special" && renderSpecialForm()}
 
-                        {/* Error Message */}
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center"
-                            >
-                                {error}
-                            </motion.div>
-                        )}
-
-                        {/* Price and Submit */}
-                        <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
-                            <AnimatePresence>
-                                {estimatedPrice && (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex items-center gap-3"
-                                    >
-                                        <div className="text-left">
-                                            <div className="text-xs text-muted-foreground uppercase tracking-wider">Estimated Fare</div>
-                                            <div className="text-3xl font-bold text-primary">${estimatedPrice}</div>
-                                        </div>
-                                    </motion.div>
-                                )}
+                                    {renderDateTimeFields()}
+                                </motion.div>
                             </AnimatePresence>
 
-                            <div className={cn("w-full md:w-auto", !estimatedPrice && "md:ml-auto")}>
-                                <Button
-                                    onClick={handleBooking}
-                                    className="w-full md:w-auto rounded-full px-10 py-6 text-base font-semibold shadow-gold relative overflow-hidden group bg-primary hover:bg-primary/90"
+                            {/* Error Message */}
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center"
                                 >
-                                    <span className="relative z-10 text-white flex items-center gap-2">
-                                        {!selectedCar ? "Select a Car" : "Request Ride"}
-                                        <ArrowRightLeft className="w-4 h-4" />
-                                    </span>
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                                </Button>
+                                    {error}
+                                </motion.div>
+                            )}
+
+                            {/* Price and Submit */}
+                            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
+                                <AnimatePresence>
+                                    {estimatedPrice && (
+                                        <div className="flex flex-col md:flex-row items-center gap-4">
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                className="flex items-center gap-3"
+                                            >
+                                                <div className="text-left">
+                                                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Estimated Base Fare</div>
+                                                    <div className="text-3xl font-bold text-primary">A$ {estimatedPrice}</div>
+                                                    {estimatedDistance && (
+                                                        <div className="text-xs text-muted-foreground mt-1">
+                                                            ~{estimatedDistance} km
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setShowMapModal(true)}
+                                                className="rounded-full border-primary/20 hover:border-primary/50 text-xs flex items-center gap-2"
+                                            >
+                                                <Expand className="w-3 h-3" />
+                                                View on Map
+                                            </Button>
+                                        </div>
+                                    )}
+                                </AnimatePresence>
+
+                                <div className={cn("w-full md:w-auto", !estimatedPrice && "md:ml-auto")}>
+                                    <Button
+                                        onClick={handleBooking}
+                                        className="w-full md:w-auto rounded-full px-10 py-6 text-base font-semibold shadow-gold relative overflow-hidden group bg-primary hover:bg-primary/90"
+                                    >
+                                        <span className="relative z-10 text-white flex items-center gap-2">
+                                            {!selectedCar ? "Select a Car" : "Request Ride"}
+                                            <ArrowRightLeft className="w-4 h-4" />
+                                        </span>
+                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+
+                        {/* Map Modal */}
+                        <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+                            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-white/10">
+                                <DialogHeader className="p-6 border-b border-white/10 flex-shrink-0">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <DialogTitle className="text-2xl font-playfair font-bold">Route Preview</DialogTitle>
+                                            <DialogDescription className="text-muted-foreground mt-1 flex items-center gap-2">
+                                                <Route className="w-4 h-4 text-primary" />
+                                                {estimatedDistance ? `Total Distance: ${estimatedDistance} km` : 'Calculating route...'}
+                                            </DialogDescription>
+                                        </div>
+                                    </div>
+                                </DialogHeader>
+                                <div className="flex-grow relative">
+                                    <MapPreview
+                                        fromCoords={
+                                            activeService === "airport" ? (flightType === "arrival" ? selectedAirport.coords : airportCoords) :
+                                                activeService === "distance" ? fromCoords :
+                                                    activeService === "hourly" ? hourlyCoords :
+                                                        activeService === "special" ? specialCoords : null
+                                        }
+                                        toCoords={
+                                            activeService === "airport" ? (flightType === "arrival" ? airportCoords : selectedAirport.coords) :
+                                                activeService === "distance" ? toCoords : null
+                                        }
+                                        className="w-full h-full"
+                                        lineColor="#3b82f6" // Custom blue line as requested
+                                    />
+
+                                    {/* Legend / Info Overlay on Map */}
+                                    <div className="absolute bottom-6 left-6 z-20 space-y-2 pointer-events-none">
+                                        <div className="bg-background/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-lg text-xs flex items-center gap-3">
+                                            <div className="flex items-center gap-2 font-medium">
+                                                <div className="w-3 h-3 rounded-full bg-[#B8A082]" />
+                                                Pickup
+                                            </div>
+                                            <div className="flex items-center gap-2 font-medium">
+                                                <div className="w-3 h-3 rounded-full bg-white border border-gray-400" />
+                                                Drop-off
+                                            </div>
+                                            <div className="flex items-center gap-2 font-medium">
+                                                <div className="w-6 h-1 rounded-full bg-[#3b82f6]" />
+                                                Route
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+
+
+
+                    </div>
                 </motion.div>
             </div>
 

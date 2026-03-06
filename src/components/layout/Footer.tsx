@@ -14,7 +14,7 @@ export function Footer() {
                         <div className="space-y-6">
                             <Link href="/" className="flex items-center gap-2 group">
                                 <span className="text-2xl font-playfair font-bold text-primary tracking-wide group-hover:text-primary/80 transition-colors">
-                                    <span className="text-foreground">Melbourne </span> Elite <span className="text-foreground">Chauffeur </span>
+                                    <span className="text-foreground">{process.env.NEXT_PUBLIC_APP_NAME}</span>
                                 </span>
                             </Link>
                             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
@@ -69,7 +69,7 @@ export function Footer() {
                             <div className="flex flex-col gap-3">
                                 {/* WhatsApp Button */}
                                 <a
-                                    href="https://wa.me/918437579399?text=Hi,%20I%20want%20to%20book%20a%20ride.."
+                                    href={`https://wa.me/${process.env.NEXT_PUBLIC_APP_WHATSAPP}?text=Hi,%20I%20want%20to%20book%20a%20ride..`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/20 transition-all group"
@@ -85,13 +85,25 @@ export function Footer() {
 
                                 {/* Call Button */}
                                 <a
-                                    href="tel:+918437579399"
+                                    href={`tel:${process.env.NEXT_PUBLIC_APP_MOBILE}`}
                                     className="flex items-center gap-3 px-5 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all group"
                                 >
                                     <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                                     <div className="flex flex-col text-left">
                                         <span className="text-[10px] uppercase tracking-wider font-semibold opacity-70">Call Me Directly</span>
-                                        <span className="font-bold">+91 8437579399</span>
+                                        <span className="font-bold">{process.env.NEXT_PUBLIC_APP_MOBILE}</span>
+                                    </div>
+                                </a>
+
+                                {/* Email Button */}
+                                <a
+                                    href={`mailto:${process.env.NEXT_PUBLIC_APP_EMAIL}`}
+                                    className="flex items-center gap-3 px-5 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all group"
+                                >
+                                    <Mail className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                                    <div className="flex flex-col text-left">
+                                        <span className="text-[10px] uppercase tracking-wider font-semibold opacity-70">Email Us</span>
+                                        <span className="font-bold">{process.env.NEXT_PUBLIC_APP_EMAIL}</span>
                                     </div>
                                 </a>
                             </div>
@@ -109,9 +121,9 @@ export function Footer() {
 
                     {/* Bottom Bar */}
                     <div className="pt-8 border-t border-border/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-                        <p>© 2024 Melbourne Elite Chauffeur. All Rights Reserved.</p>
+                        <p>© {new Date().getFullYear()} {process.env.NEXT_PUBLIC_APP_NAME}. All Rights Reserved.</p>
                         <div className="flex items-center gap-1">
-                            <span>Crafted with elegance in Melbourne.</span>
+                            <span>Crafted with elegance.</span>
                         </div>
                     </div>
                 </div>

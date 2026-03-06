@@ -35,7 +35,7 @@ export function Header() {
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 group">
                     <span className="text-2xl font-playfair font-bold text-primary tracking-wide group-hover:text-primary/80 transition-colors">
-                        <span className="text-foreground">Melbourne </span> Elite <span className="text-foreground">Chauffeur </span>
+                        <span className="text-foreground">{process.env.NEXT_PUBLIC_APP_NAME}</span>
                     </span>
                 </Link>
 

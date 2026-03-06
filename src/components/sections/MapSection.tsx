@@ -55,7 +55,7 @@ export function MapSection() {
                             <span className="text-primary italic">Luxury!</span>
                         </h2>
                         <p className="text-muted-foreground text-lg max-w-lg mx-auto lg:mx-0">
-                            Experience elegance, comfort, and exclusivity with Melbourne Elite Chauffeur. Whether it's a business event or wedding, your journey begins here .
+                            Experience elegance, comfort, and exclusivity with {process.env.NEXT_PUBLIC_APP_NAME}. Whether it's a business event or wedding, your journey begins here.
                         </p>
 
                         <div className="pt-4">

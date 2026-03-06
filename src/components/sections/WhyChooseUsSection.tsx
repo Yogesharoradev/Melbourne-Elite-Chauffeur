@@ -43,7 +43,7 @@ export function WhyChooseUsSection() {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl md:text-5xl font-playfair font-bold text-foreground">
-                        Why Choose <span className="text-primary italic">Melbourne Elite Chauffeur</span>
+                        Why Choose <span className="text-primary italic">{process.env.NEXT_PUBLIC_APP_NAME}</span>
                     </h2>
                     <p className="mt-4 text-muted-foreground text-sm md:text-base max-w-2xl mx-auto">
                         Experience the pinnacle of luxury, privacy, and dedicated personal service.

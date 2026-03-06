@@ -15,6 +15,7 @@ export interface CarOption {
     description: string;
     features: string[];
     priceMultiplier: number;
+    hourlyRate: number;
 }
 
 interface CarSelectionModalProps {
@@ -31,62 +32,68 @@ const CARS: CarOption[] = [
     {
         id: "economy",
         name: "Economy",
-        image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3543.jpg",
         passengers: 3,
         luggage: 2,
         description: "Any available Sedan, SUV and People Mover.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 1
+        priceMultiplier: 1,
+        hourlyRate: 85
     },
     {
         id: "business",
         name: "Business Class",
-        image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3544.jpg",
         passengers: 3,
         luggage: 2,
         description: "Any available Euro Sedan or SUV.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 1.12
+        priceMultiplier: 1.12,
+        hourlyRate: 95
     },
     {
         id: "first",
         name: "First Class",
-        image: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3545.jpg",
         passengers: 3,
         luggage: 2,
         description: "Mercedes S Class, BMW 7 Series, Audi A8 or similar.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 1.59
+        priceMultiplier: 1.59,
+        hourlyRate: 135
     },
     {
         id: "platinum",
         name: "Platinum Class",
-        image: "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3546.jpg",
         passengers: 3,
         luggage: 2,
         description: "New Mercedes S Class or similar.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 2.35
+        priceMultiplier: 2.35,
+        hourlyRate: 200
     },
     {
         id: "suv",
         name: "SUV",
-        image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3547.jpg",
         passengers: 4,
         luggage: 3,
         description: "Mercedes GLE, Audi Q7 or similar.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 1.06
+        priceMultiplier: 1.06,
+        hourlyRate: 90
     },
     {
         id: "people-mover",
         name: "People Mover",
-        image: "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=400&h=250&fit=crop",
+        image: "/Cars/IMG_3548.jpg",
         passengers: 7,
         luggage: 4,
         description: "Mercedes Valente, Mercedes V Class or similar.",
         features: ["Includes Meet & Greet", "Complimentary bottled water"],
-        priceMultiplier: 1.88
+        priceMultiplier: 1.88,
+        hourlyRate: 160
     }
 ];
 export function CarSelectionModal({
@@ -171,11 +178,12 @@ export function CarSelectionModal({
                                         )}
 
                                         {/* Car Image */}
-                                        <div className="relative w-full md:w-48 h-32 md:h-28 flex-shrink-0 bg-gradient-to-b from-white/5 to-transparent rounded-xl overflow-hidden">
+                                        <div className="relative w-full md:w-48 h-32 md:h-28 flex-shrink-0 bg-white rounded-xl overflow-hidden shadow-inner border border-white/20 flex items-center justify-center">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={car.image}
                                                 alt={car.name}
-                                                className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500"
+                                                className="w-full h-full object-contain mix-blend-multiply p-2 group-hover:scale-105 transition-transform duration-500"
                                             />
                                         </div>
 
