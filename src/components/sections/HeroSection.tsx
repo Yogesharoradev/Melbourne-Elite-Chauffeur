@@ -639,7 +639,7 @@ ${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
 *Date:* ${pickupDate} at ${pickupTime}
 `;
 
-            const whatsappNumber = process.env.NEXT_PUBLIC_APP_WHATSAPP; // Update with your number
+            const whatsappNumber = (process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "");
             window.open(
                 `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
                 "_blank"

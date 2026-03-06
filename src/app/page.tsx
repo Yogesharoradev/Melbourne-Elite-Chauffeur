@@ -26,7 +26,7 @@ export default function Home() {
       </div>
       <Footer />
       <WhatsAppFloat
-        phoneNumber="918437579399"
+        phoneNumber={process.env.NEXT_PUBLIC_APP_WHATSAPP || ""}
       />
     </main>
   );

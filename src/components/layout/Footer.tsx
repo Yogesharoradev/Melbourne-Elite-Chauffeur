@@ -69,7 +69,7 @@ export function Footer() {
                             <div className="flex flex-col gap-3">
                                 {/* WhatsApp Button */}
                                 <a
-                                    href={`https://wa.me/${process.env.NEXT_PUBLIC_APP_WHATSAPP}?text=Hi,%20I%20want%20to%20book%20a%20ride..`}
+                                    href={`https://wa.me/${(process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "")}?text=Hi,%20I%20want%20to%20book%20a%20ride..`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/20 transition-all group"
@@ -85,7 +85,7 @@ export function Footer() {
 
                                 {/* Call Button */}
                                 <a
-                                    href={`tel:${process.env.NEXT_PUBLIC_APP_MOBILE}`}
+                                    href={`tel:${(process.env.NEXT_PUBLIC_APP_MOBILE || "").replace(/[^0-9+]/g, "")}`}
                                     className="flex items-center gap-3 px-5 py-3 rounded-full bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all group"
                                 >
                                     <Phone className="w-5 h-5 group-hover:rotate-12 transition-transform" />
