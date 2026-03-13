@@ -39,8 +39,10 @@ export function WhatsAppFloat({
         const text = message.trim();
         if (!text) return;
 
+        // Strip everything except digits — wa.me requires pure numeric format (no +, spaces, dashes)
+        const cleanNumber = phoneNumber.replace(/\D/g, "");
         const encodedMessage = encodeURIComponent(text);
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+        const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
         window.open(whatsappUrl, "_blank");
 
         // Reset to default for next time

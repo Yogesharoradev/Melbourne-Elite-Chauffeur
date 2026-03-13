@@ -17,7 +17,7 @@ export default function Home() {
       <div className="flex-1">
         <HeroSection />
         <StatsSection />
-        <VehicleGallery />
+        {/* <VehicleGallery /> */}
         {/* <DestinationsSection /> */}
         <ServicesSection />
         <WhyChooseUsSection />

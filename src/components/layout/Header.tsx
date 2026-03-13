@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { Menu, X } from "lucide-react";
 
 export function Header() {
@@ -32,11 +32,21 @@ export function Header() {
                 }`}
         >
             <div className="container mx-auto px-6 max-w-7xl flex items-center justify-between">
+
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 group">
-                    <span className="text-2xl font-playfair font-bold text-primary tracking-wide group-hover:text-primary/80 transition-colors">
-                        <span className="text-foreground">{process.env.NEXT_PUBLIC_APP_NAME}</span>
-                    </span>
+                <Link href="/" className="flex items-center gap-4 group">
+                    <div className="flex flex-col justify-center overflow-visible">
+                        <pre className="ascii-font text-[3.5px] min-[375px]:text-[4.5px] sm:text-[5px] md:text-[6px] leading-[4.5px] min-[375px]:leading-[5.5px] sm:leading-[6px] md:leading-[7px] text-primary whitespace-pre group-hover:text-primary transition-all duration-500 glowing-text">
+                            {`
+ ██████╗ ███████╗     ██████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███████╗███████╗██╗   ██╗██████╗ 
+██╔═══██╗╚══███╔╝    ██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝██╔════╝██╔════╝██║   ██║██╔══██╗
+██║   ██║  ███╔╝     ██║     ███████║███████║██║   ██║█████╗  █████╗  █████╗  ██║   ██║██████╔╝
+██║   ██║ ███╔╝      ██║     ██╔══██║██╔══██║██║   ██║██╔══╝  ██╔══╝  ██╔══╝  ██║   ██║██╔══██╗
+╚██████╔╝███████╗    ╚██████╗██║  ██║██║  ██║╚██████╔╝██║     ██║     ███████╗╚██████╔╝██║  ██║
+ ╚═════╝ ╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+`}
+                        </pre>
+                    </div>
                 </Link>
 
                 {/* Desktop Navigation */}
@@ -52,14 +62,6 @@ export function Header() {
                     ))}
                 </nav>
 
-                {/* Desktop CTA */}
-                {/* <div className="hidden md:flex items-center gap-4">
-                    <Button variant="ghost" className="text-foreground hover:text-primary hover:bg-transparent">
-                        Sign In
-                    </Button>
-                    <Button className="rounded-full px-6 font-semibold shadow-gold">Sign Up</Button>
-                </div> */}
-
                 {/* Mobile Menu Toggle */}
                 <button
                     className="md:hidden text-foreground p-2"
@@ -69,7 +71,7 @@ export function Header() {
                 </button>
             </div>
 
-            {/* Mobile Menu Content */}
+            {/* Mobile Menu */}
             {isMobileMenuOpen && (
                 <div className="md:hidden absolute top-full left-0 w-full bg-background border-b border-border/50 py-4 shadow-lg flex flex-col items-center gap-4">
                     {navLinks.map((link) => (
@@ -82,12 +84,6 @@ export function Header() {
                             {link.name}
                         </Link>
                     ))}
-                    {/* <div className="flex flex-col gap-2 w-full px-6 mt-4">
-                        <Button variant="outline" className="w-full">
-                            Sign In
-                        </Button>
-                        <Button className="w-full rounded-full">Sign Up</Button>
-                    </div> */}
                 </div>
             )}
         </header>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Facebook, Twitter, Instagram, Linkedin, MapPin, Phone, Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,26 +13,24 @@ export function Footer() {
 
                         {/* Brand & Description */}
                         <div className="space-y-6">
-                            <Link href="/" className="flex items-center gap-2 group">
-                                <span className="text-2xl font-playfair font-bold text-primary tracking-wide group-hover:text-primary/80 transition-colors">
-                                    <span className="text-foreground">{process.env.NEXT_PUBLIC_APP_NAME}</span>
-                                </span>
+                            <Link href="/" className="flex items-center gap-4 group">
+
+                                <div className="flex flex-col justify-center overflow-visible">
+                                    <pre className="ascii-font text-[5px] md:text-[6px] leading-[6px] md:leading-[7px] text-primary whitespace-pre group-hover:text-primary transition-all duration-500 glowing-text">
+                                        {`
+ ██████╗ ███████╗     ██████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███████╗███████╗██╗   ██╗██████╗ 
+██╔═══██╗╚══███╔╝    ██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝██╔════╝██╔════╝██║   ██║██╔══██╗
+██║   ██║  ███╔╝     ██║     ███████║███████║██║   ██║█████╗  █████╗  █████╗  ██║   ██║██████╔╝
+██║   ██║ ███╔╝      ██║     ██╔══██║██╔══██║██║   ██║██╔══╝  ██╔══╝  ██╔══╝  ██║   ██║██╔══██╗
+╚██████╔╝███████╗    ╚██████╗██║  ██║██║  ██║╚██████╔╝██║     ██║     ███████╗╚██████╔╝██║  ██║
+ ╚═════╝ ╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
+`}
+                                    </pre>
+                                </div>
                             </Link>
                             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
                                 Excellent luxury travel with our premium limousine rental services.
                             </p>
-                            {/* <div className="space-y-2">
-                            <span className="text-foreground font-semibold font-playfair block">Subscribe To Updates</span>
-                            <div className="flex items-center gap-2 border border-border/50 rounded-full p-1 bg-background">
-                                <Input
-                                    placeholder="Email Address"
-                                    className="border-0 bg-transparent focus-visible:ring-0 text-sm h-10 px-4"
-                                />
-                                <Button size="icon" className="rounded-full h-10 w-10 shrink-0">
-                                    <ArrowRight className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </div> */}
                         </div>
 
                         {/* Quick Links */}

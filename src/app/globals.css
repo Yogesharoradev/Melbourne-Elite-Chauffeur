@@ -133,4 +133,25 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  @keyframes text-glow {
+    0%, 100% {
+      text-shadow: 0 0 4px rgba(198, 163, 83, 0.4), 0 0 8px rgba(198, 163, 83, 0.2);
+    }
+    50% {
+      text-shadow: 0 0 8px rgba(198, 163, 83, 0.6), 0 0 12px rgba(198, 163, 83, 0.4);
+    }
+  }
+
+  .glowing-text {
+    animation: text-glow 4s ease-in-out infinite;
+  }
+
+  .ascii-font {
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: -0.5px;
+    font-weight: 900;
+    -webkit-font-smoothing: initial;
+    -moz-osx-font-smoothing: initial;
+  }
 }
