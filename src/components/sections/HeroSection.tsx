@@ -621,22 +621,35 @@ export function HeroSection() {
             setBookingSuccess(true);
 
             const message = `
-🚘 *New Booking Request*
-
+🌟 *Luxury Booking Request*
+---------------------------------------
 *Booking ID:* ${id}
-*Name:* ${name}
-*Phone:* ${phone}
 
-*Service:* ${details.service}
-${details.type ? `*Type:* ${details.type}` : ''}
-${details.airport ? `*Airport:* ${details.airport}` : ''}
-${details.from ? `*From:* ${details.from}` : ''}
-${details.to ? `*To:* ${details.to}` : ''}
-${details.duration ? `*Duration:* ${details.duration}` : ''}
-${details.occasion ? `*Occasion:* ${details.occasion}` : ''}
-${selectedCar ? `*Vehicle:* ${getSelectedCarDetails()?.name}` : ''}
-*Est. Fare:* A$ ${calculateCarPrice(estimatedPrice || 0)}
-*Date:* ${pickupDate} at ${pickupTime}
+*Customer Details:*
+• Name: ${name}
+• Phone: ${phone}
+${email ? `• Email: ${email}` : ''}
+
+*Journey Information:*
+• Service: ${details.service}
+${details.type ? `• Type: ${details.type}` : ''}
+${details.airport ? `• Airport: ${details.airport}` : ''}
+${details.from ? `• Pickup: ${details.from}` : ''}
+${details.to ? `• Drop-off: ${details.to}` : ''}
+${details.address ? `• Address: ${details.address}` : ''}
+${details.duration ? `• Duration: ${details.duration}` : ''}
+${details.occasion ? `• Occasion: ${details.occasion}` : ''}
+${details.guests ? `• Guests: ${details.guests}` : ''}
+
+*Vehicle & Fare:*
+• Vehicle: ${getSelectedCarDetails()?.name}
+• Estimated Fare: A$ ${calculateCarPrice(estimatedPrice || 0)}
+
+*Schedule:*
+• Date: ${pickupDate}
+• Time: ${pickupTime}
+---------------------------------------
+_Thank you for choosing Melbourne Elite Chauffeur_
 `;
 
             const whatsappNumber = (process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "");

@@ -9,23 +9,18 @@ export function Footer() {
         <footer className="bg-background border-t border-border/10 pt-20 pb-10">
             <section id="contact">
                 <div className="container mx-auto px-6 max-w-7xl">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
 
                         {/* Brand & Description */}
                         <div className="space-y-6">
                             <Link href="/" className="flex items-center gap-4 group">
-
-                                <div className="flex flex-col justify-center overflow-visible">
-                                    <pre className="ascii-font text-[5px] md:text-[6px] leading-[6px] md:leading-[7px] text-primary whitespace-pre group-hover:text-primary transition-all duration-500 glowing-text">
-                                        {`
- ██████╗ ███████╗     ██████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███████╗███████╗██╗   ██╗██████╗ 
-██╔═══██╗╚══███╔╝    ██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝██╔════╝██╔════╝██║   ██║██╔══██╗
-██║   ██║  ███╔╝     ██║     ███████║███████║██║   ██║█████╗  █████╗  █████╗  ██║   ██║██████╔╝
-██║   ██║ ███╔╝      ██║     ██╔══██║██╔══██║██║   ██║██╔══╝  ██╔══╝  ██╔══╝  ██║   ██║██╔══██╗
-╚██████╔╝███████╗    ╚██████╗██║  ██║██║  ██║╚██████╔╝██║     ██║     ███████╗╚██████╔╝██║  ██║
- ╚═════╝ ╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝     ╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-`}
-                                    </pre>
+                                <div className="relative h-12 w-48 transition-transform duration-500 group-hover:scale-105">
+                                    <Image
+                                        src="/logo.png"
+                                        alt="Melbourne Elite Chauffeur"
+                                        fill
+                                        className="object-contain object-left pointer-events-none"
+                                    />
                                 </div>
                             </Link>
                             <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
@@ -37,7 +32,7 @@ export function Footer() {
                         <div className="space-y-6 lg:ml-12">
                             <h4 className="text-foreground font-semibold font-playfair text-xl">Quick Links</h4>
                             <ul className="space-y-4">
-                                {["The Car", "Services", "Testimonials"].map((link) => (
+                                {["Services", "Testimonials"].map((link) => (
                                     <li key={link}>
                                         <Link href={`#${link.toLowerCase().replace(" ", "-")}`} className="text-muted-foreground text-sm hover:text-primary transition-colors hover:translate-x-1 inline-block">
                                             {link}
@@ -48,7 +43,7 @@ export function Footer() {
                         </div>
 
                         {/* Support */}
-                        <div className="space-y-6">
+                        {/* <div className="space-y-6">
                             <h4 className="text-foreground font-semibold font-playfair text-xl">Support</h4>
                             <ul className="space-y-4">
                                 {["Privacy Policy", "Cancellation Policy"].map((link) => (
@@ -59,7 +54,7 @@ export function Footer() {
                                     </li>
                                 ))}
                             </ul>
-                        </div>
+                        </div> */}
 
                         {/* Get In Touch */}
                         <div className="space-y-6">
@@ -68,7 +63,7 @@ export function Footer() {
                             <div className="flex flex-col gap-3">
                                 {/* WhatsApp Button */}
                                 <a
-                                    href={`https://wa.me/${(process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "")}?text=Hi,%20I%20want%20to%20book%20a%20ride..`}
+                                    href={`https://wa.me/${(process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "")}?text=${encodeURIComponent("Hello Melbourne Elite Chauffeur,\n\nI would like to book a luxury chauffeur service.\n\nPickup Address:\nDrop-off Address:\nPreferred Date & Time:\n\nThank you.")}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/20 transition-all group"

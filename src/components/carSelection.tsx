@@ -32,7 +32,7 @@ const CARS: CarOption[] = [
     {
         id: "economy",
         name: "Economy",
-        image: "/Cars/IMG_3543.jpg",
+        image: "/Cars/IMG_3543.JPG",
         passengers: 3,
         luggage: 2,
         description: "Any available Sedan, SUV and People Mover.",
@@ -43,7 +43,7 @@ const CARS: CarOption[] = [
     {
         id: "business",
         name: "Business Class",
-        image: "/Cars/IMG_3544.jpg",
+        image: "/Cars/IMG_3544.JPG",
         passengers: 3,
         luggage: 2,
         description: "Any available Euro Sedan or SUV.",
@@ -54,7 +54,7 @@ const CARS: CarOption[] = [
     {
         id: "first",
         name: "First Class",
-        image: "/Cars/IMG_3545.jpg",
+        image: "/Cars/IMG_3545.JPG",
         passengers: 3,
         luggage: 2,
         description: "Mercedes S Class, BMW 7 Series, Audi A8 or similar.",
@@ -65,7 +65,7 @@ const CARS: CarOption[] = [
     {
         id: "platinum",
         name: "Platinum Class",
-        image: "/Cars/IMG_3546.jpg",
+        image: "/Cars/IMG_3546.JPG",
         passengers: 3,
         luggage: 2,
         description: "New Mercedes S Class or similar.",
@@ -76,7 +76,7 @@ const CARS: CarOption[] = [
     {
         id: "suv",
         name: "SUV",
-        image: "/Cars/IMG_3547.jpg",
+        image: "/Cars/IMG_3547.JPG",
         passengers: 4,
         luggage: 3,
         description: "Mercedes GLE, Audi Q7 or similar.",
@@ -87,7 +87,7 @@ const CARS: CarOption[] = [
     {
         id: "people-mover",
         name: "People Mover",
-        image: "/Cars/IMG_3548.jpg",
+        image: "/Cars/IMG_3548.JPG",
         passengers: 7,
         luggage: 4,
         description: "Mercedes Valente, Mercedes V Class or similar.",
