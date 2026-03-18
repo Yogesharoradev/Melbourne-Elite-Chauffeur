@@ -21,7 +21,10 @@ import {
     Users,
     Briefcase,
     Info,
-    Expand
+    Expand,
+    MessageCircle,
+    MessageSquare,
+    CloudCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "../ui/label";
@@ -157,7 +160,6 @@ export function HeroSection() {
     const [showAirportSuggestions, setShowAirportSuggestions] = useState(false);
     const [airportSuggestions, setAirportSuggestions] = useState<Suggestion[]>([]);
     const [airportLoading, setAirportLoading] = useState(false);
-
     // Distance states
     const [fromLocation, setFromLocation] = useState("");
     const [toLocation, setToLocation] = useState("");
@@ -182,15 +184,20 @@ export function HeroSection() {
     const [occasionDetails, setOccasionDetails] = useState("");
     const [guestCount, setGuestCount] = useState(2);
     const [specialAddress, setSpecialAddress] = useState("");
+    const [specialToLocation, setSpecialToLocation] = useState("");
     const [showSpecialSuggestions, setShowSpecialSuggestions] = useState(false);
+    const [showSpecialToSuggestions, setShowSpecialToSuggestions] = useState(false);
     const [specialSuggestions, setSpecialSuggestions] = useState<Suggestion[]>([]);
+    const [specialToSuggestions, setSpecialToSuggestions] = useState<Suggestion[]>([]);
     const [specialLoading, setSpecialLoading] = useState(false);
+    const [specialToLoading, setSpecialToLoading] = useState(false);
 
     const debouncedFrom = useDebounce(fromLocation, 300);
     const debouncedTo = useDebounce(toLocation, 300);
     const debouncedAirport = useDebounce(airportAddress, 300);
     const debouncedHourly = useDebounce(hourlyAddress, 300);
     const debouncedSpecial = useDebounce(specialAddress, 300);
+    const debouncedSpecialTo = useDebounce(specialToLocation, 300);
 
     const fromRef = useRef<HTMLDivElement>(null);
     const toRef = useRef<HTMLDivElement>(null);
@@ -208,12 +215,14 @@ export function HeroSection() {
     const [bookingSuccess, setBookingSuccess] = useState(false);
     const [bookingId, setBookingId] = useState<string | null>(null);
     const [showMapModal, setShowMapModal] = useState(false);
+    const [contactMethod, setContactMethod] = useState<"whatsapp" | "sms">("whatsapp");
 
     const [airportCoords, setAirportCoords] = useState<[number, number] | null>(null)
     const [fromCoords, setFromCoords] = useState<[number, number] | null>(null)
     const [toCoords, setToCoords] = useState<[number, number] | null>(null)
     const [hourlyCoords, setHourlyCoords] = useState<[number, number] | null>(null)
     const [specialCoords, setSpecialCoords] = useState<[number, number] | null>(null)
+    const [specialToCoords, setSpecialToCoords] = useState<[number, number] | null>(null)
 
     const {
         selectedCar,
@@ -469,6 +478,12 @@ export function HeroSection() {
     }, [debouncedSpecial, activeService, fetchSuggestions]);
 
     useEffect(() => {
+        if (activeService === "special") {
+            fetchSuggestions(debouncedSpecialTo, setSpecialToSuggestions, setSpecialToLoading);
+        }
+    }, [debouncedSpecialTo, activeService, fetchSuggestions]);
+
+    useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (fromRef.current && !fromRef.current.contains(event.target as Node)) {
                 setShowFromSuggestions(false);
@@ -484,6 +499,7 @@ export function HeroSection() {
             }
             if (specialRef.current && !specialRef.current.contains(event.target as Node)) {
                 setShowSpecialSuggestions(false);
+                setShowSpecialToSuggestions(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
@@ -531,8 +547,12 @@ export function HeroSection() {
                 }
                 break;
             case "special":
-                if (!specialAddress || !occasionDate) {
-                    setError("Please fill in all required fields.");
+                if (!specialAddress) {
+                    setError("Please enter the starting point.");
+                    return false;
+                }
+                if (selectedOccasion.id === "wedding" && !specialToLocation) {
+                    setError("Please enter the destination.");
                     return false;
                 }
                 break;
@@ -584,10 +604,73 @@ export function HeroSection() {
                     occasion: selectedOccasion.name,
                     guests: guestCount,
                     address: specialAddress,
+                    to: selectedOccasion.id === "wedding" ? specialToLocation : undefined,
                     date: `${pickupDate} ${pickupTime}`
                 };
         }
     };
+
+    const getFormattedBookingDetails = useCallback(() => {
+        const details = getBookingDetails();
+        const carDetails = getSelectedCarDetails();
+        const price = calculateCarPrice(estimatedPrice || 0);
+
+        return {
+            id: bookingId || generateBookingId(),
+            customer: { name, phone, email },
+            service: details,
+            vehicle: carDetails?.name || "Premium Vehicle",
+            fare: price,
+            schedule: { date: pickupDate, time: pickupTime }
+        };
+    }, [activeService, name, phone, email, estimatedPrice, pickupDate, pickupTime, getBookingDetails, getSelectedCarDetails, calculateCarPrice, bookingId]);
+
+    const buildWhatsAppMessage = useCallback((data: any) => {
+        const { id, customer, service, vehicle, fare, schedule } = data;
+        return `
+🌟 *Luxury Booking Request*
+---------------------------------------
+*Booking ID:* ${id}
+
+*Customer Details:*
+• Name: ${customer.name}
+• Phone: ${customer.phone}
+${customer.email ? `• Email: ${customer.email}` : ""}
+
+*Journey Information:*
+• Service: ${service.service}
+${service.type ? `• Type: ${service.type}` : ""}
+${service.airport ? `• Airport: ${service.airport}` : ""}
+${service.from ? `• Pickup: ${service.from}` : ""}
+${service.to ? `• Drop-off: ${service.to}` : ""}
+${service.address ? `• Address: ${service.address}` : ""}
+${service.duration ? `• Duration: ${service.duration}` : ""}
+${service.occasion ? `• Occasion: ${service.occasion}` : ""}
+${service.guests ? `• Guests: ${service.guests}` : ""}
+${service.to ? `• Destination: ${service.to}` : ""}
+
+*Vehicle & Fare:*
+• Vehicle: ${vehicle}
+• Estimated Fare: A$ ${fare}
+
+*Schedule:*
+• Date: ${schedule.date}
+• Time: ${schedule.time}
+---------------------------------------
+_Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite Chauffeur"}_
+`;
+    }, []);
+
+    const buildSMSMessage = useCallback((data: any) => {
+        const { id, customer, service, vehicle, fare, schedule } = data;
+        let msg = `Booking: ${id}\nName: ${customer.name}\nService: ${service.service}\n`;
+        if (service.from) msg += `From: ${service.from}\n`;
+        if (service.to) msg += `To: ${service.to}\n`;
+        if (service.address) msg += `At: ${service.address}\n`;
+        if (service.to) msg += `To: ${service.to}\n`;
+        msg += `Vehicle: ${vehicle}\nFare: A$ ${fare}\nDate: ${schedule.date} ${schedule.time}`;
+        return msg;
+    }, []);
 
     const confirmBooking = async () => {
         if (!name || !phone) {
@@ -597,78 +680,38 @@ export function HeroSection() {
 
         try {
             setSubmitting(true);
-            const id = generateBookingId();
-            const details = getBookingDetails();
+            const data = getFormattedBookingDetails();
 
-            const bookingData = {
-                bookingId: id,
-                name,
-                phone,
-                email,
-                serviceType: activeService,
-                ...details,
-                estimatedPrice,
-                createdAt: new Date().toISOString(),
-                carType: getSelectedCarDetails()?.name,
-                finalPrice: calculateCarPrice(estimatedPrice || 0),
-            };
-
+            // Save to localStorage
             const existing = JSON.parse(localStorage.getItem("bookings") || "[]");
-            existing.push(bookingData);
+            existing.push({
+                ...data,
+                createdAt: new Date().toISOString()
+            });
             localStorage.setItem("bookings", JSON.stringify(existing));
 
-            setBookingId(id);
+            setBookingId(data.id);
             setBookingSuccess(true);
 
-            const message = `
-🌟 *Luxury Booking Request*
----------------------------------------
-*Booking ID:* ${id}
-
-*Customer Details:*
-• Name: ${name}
-• Phone: ${phone}
-${email ? `• Email: ${email}` : ''}
-
-*Journey Information:*
-• Service: ${details.service}
-${details.type ? `• Type: ${details.type}` : ''}
-${details.airport ? `• Airport: ${details.airport}` : ''}
-${details.from ? `• Pickup: ${details.from}` : ''}
-${details.to ? `• Drop-off: ${details.to}` : ''}
-${details.address ? `• Address: ${details.address}` : ''}
-${details.duration ? `• Duration: ${details.duration}` : ''}
-${details.occasion ? `• Occasion: ${details.occasion}` : ''}
-${details.guests ? `• Guests: ${details.guests}` : ''}
-
-*Vehicle & Fare:*
-• Vehicle: ${getSelectedCarDetails()?.name}
-• Estimated Fare: A$ ${calculateCarPrice(estimatedPrice || 0)}
-
-*Schedule:*
-• Date: ${pickupDate}
-• Time: ${pickupTime}
----------------------------------------
-_Thank you for choosing Melbourne Elite Chauffeur_
-`;
-
             const whatsappNumber = (process.env.NEXT_PUBLIC_APP_WHATSAPP || "").replace(/[^0-9+]/g, "");
-            window.open(
-                `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`,
-                "_blank"
-            );
 
-            // Reset form
-            setName("");
-            setPhone("");
-            setEmail("");
-            setAirportAddress("");
-            setFromLocation("");
-            setToLocation("");
-            setHourlyAddress("");
-            setSpecialAddress("");
-            setOccasionDetails("");
-        } catch {
+            if (contactMethod === "whatsapp") {
+                const message = buildWhatsAppMessage(data);
+                window.open(`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`, "_blank");
+            } else {
+                const message = buildSMSMessage(data);
+                window.open(`sms:${whatsappNumber}?body=${encodeURIComponent(message)}`, "_blank");
+            }
+
+            // Reset form fields
+            const resetFields = () => {
+                setName(""); setPhone(""); setEmail("");
+                setAirportAddress(""); setFromLocation(""); setToLocation("");
+                setHourlyAddress(""); setSpecialAddress(""); setSpecialToLocation(""); setOccasionDetails("");
+            };
+            resetFields();
+        } catch (err) {
+            console.error("Booking error:", err);
             setError("Something went wrong.");
         } finally {
             setSubmitting(false);
@@ -1098,10 +1141,10 @@ _Thank you for choosing Melbourne Elite Chauffeur_
                     </div>
                 </div>
 
-                {/* Pickup Address */}
+                {/* Pickup Address / Starting Point */}
                 <div ref={specialRef} className="relative">
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">
-                        Pickup Address
+                        {selectedOccasion.id === "wedding" ? "Starting Point" : "Pickup Address"}
                     </label>
                     <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
@@ -1112,7 +1155,7 @@ _Thank you for choosing Melbourne Elite Chauffeur_
                                 setShowSpecialSuggestions(true);
                             }}
                             onFocus={() => setShowSpecialSuggestions(true)}
-                            placeholder="Enter pickup location..."
+                            placeholder={selectedOccasion.id === "wedding" ? "Enter ceremony or pickup location..." : "Enter pickup location..."}
                             className="pl-10 bg-white/5 border-white/10 focus:border-primary/50"
                         />
                         {specialLoading && (
@@ -1152,6 +1195,63 @@ _Thank you for choosing Melbourne Elite Chauffeur_
                         )}
                     </AnimatePresence>
                 </div>
+
+                {/* Destination (Only for Wedding) */}
+                {selectedOccasion.id === "wedding" && (
+                    <div className="relative md:col-start-2">
+                        <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">
+                            Destination
+                        </label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                            <Input
+                                value={specialToLocation}
+                                onChange={(e) => {
+                                    setSpecialToLocation(e.target.value);
+                                    setShowSpecialToSuggestions(true);
+                                }}
+                                onFocus={() => setShowSpecialToSuggestions(true)}
+                                placeholder="Enter reception or destination..."
+                                className="pl-10 bg-white/5 border-white/10 focus:border-primary/50"
+                            />
+                            {specialToLoading && (
+                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                            )}
+                        </div>
+
+                        <AnimatePresence>
+                            {showSpecialToSuggestions && (specialToSuggestions.length > 0 || specialToLocation.length > 0) && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden shadow-2xl z-50"
+                                >
+                                    <div className="max-h-48 overflow-y-auto py-2">
+                                        {specialToSuggestions.length === 0 && specialToLocation.length > 0 && !specialToLoading ? (
+                                            <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
+                                        ) : (
+                                            specialToSuggestions.map((suggestion, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setSpecialToLocation(suggestion.place_name);
+                                                        setSpecialToCoords(suggestion.center);
+                                                        setShowSpecialToSuggestions(false);
+                                                    }}
+                                                    className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
+                                                >
+                                                    <span className="pr-4 line-clamp-2">{suggestion.place_name}</span>
+                                                    <Check className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
             </div>
 
             {/* Additional Details */}
@@ -1507,6 +1607,36 @@ _Thank you for choosing Melbourne Elite Chauffeur_
                                                 className="bg-background/50"
                                             />
                                         </div>
+
+                                        <div className="space-y-3">
+                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact Method</Label>
+                                            <div className="flex gap-3">
+                                                <button
+                                                    onClick={() => setContactMethod("whatsapp")}
+                                                    className={cn(
+                                                        "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
+                                                        contactMethod === "whatsapp"
+                                                            ? "bg-green-500/10 border-green-500/50 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                                    )}
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                    <span className="font-medium text-sm">WhatsApp</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => setContactMethod("sms")}
+                                                    className={cn(
+                                                        "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
+                                                        contactMethod === "sms"
+                                                            ? "bg-blue-500/10 border-blue-500/50 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                                    )}
+                                                >
+                                                    <MessageSquare className="w-4 h-4" />
+                                                    <span className="font-medium text-sm">SMS</span>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {error && (
@@ -1518,12 +1648,18 @@ _Thank you for choosing Melbourne Elite Chauffeur_
                                     <Button
                                         onClick={confirmBooking}
                                         disabled={submitting}
-                                        className="w-full py-6 rounded-xl font-bold text-lg"
+                                        className={cn(
+                                            "w-full py-7 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3",
+                                            contactMethod === "whatsapp" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
+                                        )}
                                     >
                                         {submitting ? (
                                             <Loader2 className="w-5 h-5 animate-spin" />
                                         ) : (
-                                            "Confirm & Open WhatsApp"
+                                            <>
+                                                {contactMethod === "whatsapp" ? <MessageCircle className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+                                                Confirm & Send {contactMethod === "whatsapp" ? "WhatsApp" : "SMS"}
+                                            </>
                                         )}
                                     </Button>
                                 </div>

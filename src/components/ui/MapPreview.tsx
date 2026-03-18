@@ -17,6 +17,8 @@ export function MapPreview({ fromCoords, toCoords, className, lineColor = '#B8A0
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<mapboxgl.Map | null>(null);
 
+
+
     useEffect(() => {
         if (!mapContainer.current) return;
 
