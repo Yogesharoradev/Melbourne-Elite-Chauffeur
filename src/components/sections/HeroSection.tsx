@@ -551,7 +551,7 @@ export function HeroSection() {
                     setError("Please enter the starting point.");
                     return false;
                 }
-                if (selectedOccasion.id === "wedding" && !specialToLocation) {
+                if (!specialToLocation) {
                     setError("Please enter the destination.");
                     return false;
                 }
@@ -604,7 +604,7 @@ export function HeroSection() {
                     occasion: selectedOccasion.name,
                     guests: guestCount,
                     address: specialAddress,
-                    to: selectedOccasion.id === "wedding" ? specialToLocation : undefined,
+                    to: specialToLocation,
                     date: `${pickupDate} ${pickupTime}`
                 };
         }
@@ -663,12 +663,22 @@ _Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite C
 
     const buildSMSMessage = useCallback((data: any) => {
         const { id, customer, service, vehicle, fare, schedule } = data;
-        let msg = `Booking: ${id}\nName: ${customer.name}\nService: ${service.service}\n`;
-        if (service.from) msg += `From: ${service.from}\n`;
-        if (service.to) msg += `To: ${service.to}\n`;
-        if (service.address) msg += `At: ${service.address}\n`;
-        if (service.to) msg += `To: ${service.to}\n`;
-        msg += `Vehicle: ${vehicle}\nFare: A$ ${fare}\nDate: ${schedule.date} ${schedule.time}`;
+        let msg = `Booking ID: ${id}\n`;
+        msg += `Customer: ${customer.name}, ${customer.phone}\n`;
+        if (customer.email) msg += `Email: ${customer.email}\n`;
+        msg += `Service: ${service.service}\n`;
+        if (service.type) msg += `Type: ${service.type}\n`;
+        if (service.airport) msg += `Airport: ${service.airport}\n`;
+        if (service.from) msg += `Pickup: ${service.from}\n`;
+        if (service.to) msg += `Drop-off: ${service.to}\n`;
+        if (service.address) msg += `Address: ${service.address}\n`;
+        if (service.duration) msg += `Duration: ${service.duration}\n`;
+        if (service.occasion) msg += `Occasion: ${service.occasion}\n`;
+        if (service.guests) msg += `Guests: ${service.guests}\n`;
+        msg += `Vehicle: ${vehicle}\n`;
+        msg += `Fare: A$ ${fare}\n`;
+        msg += `Schedule: ${schedule.date} ${schedule.time}\n`;
+        msg += `Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || ""}`;
         return msg;
     }, []);
 
@@ -1141,10 +1151,10 @@ _Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite C
                     </div>
                 </div>
 
-                {/* Pickup Address / Starting Point */}
+                {/* Starting Point */}
                 <div ref={specialRef} className="relative">
                     <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">
-                        {selectedOccasion.id === "wedding" ? "Starting Point" : "Pickup Address"}
+                        Starting Point
                     </label>
                     <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
@@ -1155,7 +1165,7 @@ _Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite C
                                 setShowSpecialSuggestions(true);
                             }}
                             onFocus={() => setShowSpecialSuggestions(true)}
-                            placeholder={selectedOccasion.id === "wedding" ? "Enter ceremony or pickup location..." : "Enter pickup location..."}
+                            placeholder="Enter pickup location..."
                             className="pl-10 bg-white/5 border-white/10 focus:border-primary/50"
                         />
                         {specialLoading && (
@@ -1196,62 +1206,60 @@ _Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite C
                     </AnimatePresence>
                 </div>
 
-                {/* Destination (Only for Wedding) */}
-                {selectedOccasion.id === "wedding" && (
-                    <div className="relative md:col-start-2">
-                        <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">
-                            Destination
-                        </label>
-                        <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
-                            <Input
-                                value={specialToLocation}
-                                onChange={(e) => {
-                                    setSpecialToLocation(e.target.value);
-                                    setShowSpecialToSuggestions(true);
-                                }}
-                                onFocus={() => setShowSpecialToSuggestions(true)}
-                                placeholder="Enter reception or destination..."
-                                className="pl-10 bg-white/5 border-white/10 focus:border-primary/50"
-                            />
-                            {specialToLoading && (
-                                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-                            )}
-                        </div>
-
-                        <AnimatePresence>
-                            {showSpecialToSuggestions && (specialToSuggestions.length > 0 || specialToLocation.length > 0) && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden shadow-2xl z-50"
-                                >
-                                    <div className="max-h-48 overflow-y-auto py-2">
-                                        {specialToSuggestions.length === 0 && specialToLocation.length > 0 && !specialToLoading ? (
-                                            <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
-                                        ) : (
-                                            specialToSuggestions.map((suggestion, index) => (
-                                                <button
-                                                    key={index}
-                                                    onClick={() => {
-                                                        setSpecialToLocation(suggestion.place_name);
-                                                        setSpecialToCoords(suggestion.center);
-                                                        setShowSpecialToSuggestions(false);
-                                                    }}
-                                                    className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
-                                                >
-                                                    <span className="pr-4 line-clamp-2">{suggestion.place_name}</span>
-                                                    <Check className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
-                                                </button>
-                                            ))
-                                        )}
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                {/* Destination */}
+                <div className="relative">
+                    <label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-1.5 block">
+                        Destination
+                    </label>
+                    <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                        <Input
+                            value={specialToLocation}
+                            onChange={(e) => {
+                                setSpecialToLocation(e.target.value);
+                                setShowSpecialToSuggestions(true);
+                            }}
+                            onFocus={() => setShowSpecialToSuggestions(true)}
+                            placeholder="Enter destination address..."
+                            className="pl-10 bg-white/5 border-white/10 focus:border-primary/50"
+                        />
+                        {specialToLoading && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                        )}
                     </div>
-                )}
+
+                    <AnimatePresence>
+                        {showSpecialToSuggestions && (specialToSuggestions.length > 0 || specialToLocation.length > 0) && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="absolute top-full left-0 right-0 mt-2 bg-background/95 backdrop-blur-md border border-border/50 rounded-xl overflow-hidden shadow-2xl z-50"
+                            >
+                                <div className="max-h-48 overflow-y-auto py-2">
+                                    {specialToSuggestions.length === 0 && specialToLocation.length > 0 && !specialToLoading ? (
+                                        <div className="px-4 py-3 text-sm text-muted-foreground">No addresses found.</div>
+                                    ) : (
+                                        specialToSuggestions.map((suggestion, index) => (
+                                            <button
+                                                key={index}
+                                                onClick={() => {
+                                                    setSpecialToLocation(suggestion.place_name);
+                                                    setSpecialToCoords(suggestion.center);
+                                                    setShowSpecialToSuggestions(false);
+                                                }}
+                                                className="w-full px-4 py-2.5 text-sm hover:bg-primary/10 hover:text-primary transition-colors flex items-start justify-between group text-left"
+                                            >
+                                                <span className="pr-4 line-clamp-2">{suggestion.place_name}</span>
+                                                <Check className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5" />
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {/* Additional Details */}
@@ -1265,453 +1273,453 @@ _Thank you for choosing ${process.env.NEXT_PUBLIC_APP_NAME || "Melbourne Elite C
                     placeholder="Any specific requirements..."
                     className="bg-white/5 border-white/10 focus:border-primary/50"
                 />
-            </div>
-        </div>
+            </div >
+        </div >
     );
 
-    const renderDateTimeFields = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
-            <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Pickup Date
-                </Label>
-                <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none z-10" />
-                    <Input
-                        type="date"
-                        value={pickupDate}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setPickupDate(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 text-foreground [color-scheme:dark] h-11"
-                    />
-                </div>
-            </div>
-            <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                    Pickup Time
-                </Label>
-                <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none z-10" />
-                    <Input
-                        type="time"
-                        value={pickupTime}
-                        onChange={(e) => setPickupTime(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 text-foreground [color-scheme:dark] h-11"
-                    />
-                </div>
-            </div>
-        </div>
-    );
-    return (
-        <section className="relative min-h-[90vh] flex items-center justify-center pt-24 overflow-hidden">
-            {/* Background */}
-            <div className="absolute inset-0 z-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src="/IMG_2858.WEBP"
-                    alt="Luxury Car Background"
-                    className="w-full h-full object-cover opacity-40"
+const renderDateTimeFields = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-white/10">
+        <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Pickup Date
+            </Label>
+            <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none z-10" />
+                <Input
+                    type="date"
+                    value={pickupDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setPickupDate(e.target.value)}
+                    className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 text-foreground [color-scheme:dark] h-11"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/80 to-background z-0"></div>
             </div>
+        </div>
+        <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
+                Pickup Time
+            </Label>
+            <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none z-10" />
+                <Input
+                    type="time"
+                    value={pickupTime}
+                    onChange={(e) => setPickupTime(e.target.value)}
+                    className="pl-10 bg-white/5 border-white/10 focus:border-primary/50 text-foreground [color-scheme:dark] h-11"
+                />
+            </div>
+        </div>
+    </div>
+);
+return (
+    <section className="relative min-h-[90vh] flex items-center justify-center pt-24 overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 z-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+                src="/IMG_2858.WEBP"
+                alt="Luxury Car Background"
+                className="w-full h-full object-cover opacity-40"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/80 to-background z-0"></div>
+        </div>
 
-            {/* Gold glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
+        {/* Gold glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-            <div className="container relative z-10 px-4 md:px-6 flex flex-col items-center text-center">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8 }}
-                    className="max-w-4xl mx-auto space-y-6"
-                >
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair font-bold tracking-tight text-foreground drop-shadow-sm">
-                        Your <span className="text-primary italic">Personal</span> Luxury <br className="hidden md:block" />
-                        Chauffeur Awaits
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto drop-shadow-sm">
-                        Experience privacy, elegance, and tailored travel with our exclusive premium ride service in Melbourne.
-                    </p>
+        <div className="container relative z-10 px-4 md:px-6 flex flex-col items-center text-center">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="max-w-4xl mx-auto space-y-6"
+            >
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair font-bold tracking-tight text-foreground drop-shadow-sm">
+                    Your <span className="text-primary italic">Personal</span> Luxury <br className="hidden md:block" />
+                    Chauffeur Awaits
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto drop-shadow-sm">
+                    Experience privacy, elegance, and tailored travel with our exclusive premium ride service in Melbourne.
+                </p>
 
-                    <div className="flex justify-center pt-4">
-                        <motion.div
-                            animate={{ y: [0, 8, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            className="cursor-pointer"
-                            onClick={scrollToBooking}
-                        >
-                            <ChevronDown className="w-8 h-8 text-primary/60 hover:text-primary transition-colors" />
-                        </motion.div>
+                <div className="flex justify-center pt-4">
+                    <motion.div
+                        animate={{ y: [0, 8, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="cursor-pointer"
+                        onClick={scrollToBooking}
+                    >
+                        <ChevronDown className="w-8 h-8 text-primary/60 hover:text-primary transition-colors" />
+                    </motion.div>
+                </div>
+            </motion.div>
+
+            <motion.div
+                id="booking-widget"
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, delay: 0.2 }}
+                className="w-full max-w-7xl mt-16 lg:mt-24 relative"
+            >
+                {/* Service Type Tabs */}
+                <div className="flex justify-center mb-8 w-full">
+                    <div className="grid grid-cols-2 md:flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl gap-2 w-full md:w-auto">
+                        {serviceTabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveService(tab.id)}
+                                className={cn(
+                                    "relative px-4 py-3 md:px-6 md:py-3.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap",
+                                    activeService === tab.id
+                                        ? "text-white"
+                                        : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                {activeService === tab.id && (
+                                    <motion.div
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-primary rounded-xl shadow-lg"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2">
+                                    <tab.icon className="w-4 h-4" />
+                                    <span>{tab.label}</span>
+                                </span>
+                            </button>
+                        ))}
                     </div>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    id="booking-widget"
-                    initial={{ opacity: 0, y: 40 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 1, delay: 0.2 }}
-                    className="w-full max-w-7xl mt-16 lg:mt-24 relative"
-                >
-                    {/* Service Type Tabs */}
-                    <div className="flex justify-center mb-8 w-full">
-                        <div className="grid grid-cols-2 md:flex bg-white/10 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 shadow-xl gap-2 w-full md:w-auto">
-                            {serviceTabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveService(tab.id)}
-                                    className={cn(
-                                        "relative px-4 py-3 md:px-6 md:py-3.5 rounded-xl text-xs md:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 whitespace-nowrap",
-                                        activeService === tab.id
-                                            ? "text-white"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    {activeService === tab.id && (
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 items-start">
+                    {/* Main Booking Card */}
+                    <Card className="glass-card relative z-20 p-6 md:p-8 rounded-3xl bg-background/60 backdrop-blur-xl border-white/10 shadow-2xl">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeService}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-4"
+                            >
+                                {activeService === "airport" && renderAirportForm()}
+                                {activeService === "distance" && renderDistanceForm()}
+                                {activeService === "hourly" && renderHourlyForm()}
+                                {activeService === "special" && renderSpecialForm()}
+
+                                {renderDateTimeFields()}
+                            </motion.div>
+                        </AnimatePresence>
+
+                        {/* Error Message */}
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center"
+                            >
+                                {error}
+                            </motion.div>
+                        )}
+
+                        {/* Price and Submit */}
+                        <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
+                            <AnimatePresence>
+                                {estimatedPrice && (
+                                    <div className="flex flex-col md:flex-row items-center gap-4">
                                         <motion.div
-                                            layoutId="activeTab"
-                                            className="absolute inset-0 bg-primary rounded-xl shadow-lg"
-                                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                                        />
-                                    )}
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        <tab.icon className="w-4 h-4" />
-                                        <span>{tab.label}</span>
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.8 }}
+                                            className="flex items-center gap-3"
+                                        >
+                                            <div className="text-left">
+                                                <div className="text-xs text-muted-foreground uppercase tracking-wider">Estimated Base Fare</div>
+                                                <div className="text-3xl font-bold text-primary">A$ {estimatedPrice}</div>
+                                                {estimatedDistance && (
+                                                    <div className="text-xs text-muted-foreground mt-1">
+                                                        ~{estimatedDistance} km
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </motion.div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 items-start">
-                        {/* Main Booking Card */}
-                        <Card className="glass-card relative z-20 p-6 md:p-8 rounded-3xl bg-background/60 backdrop-blur-xl border-white/10 shadow-2xl">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeService}
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="space-y-4"
-                                >
-                                    {activeService === "airport" && renderAirportForm()}
-                                    {activeService === "distance" && renderDistanceForm()}
-                                    {activeService === "hourly" && renderHourlyForm()}
-                                    {activeService === "special" && renderSpecialForm()}
-
-                                    {renderDateTimeFields()}
-                                </motion.div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowMapModal(true)}
+                                            className="rounded-full border-primary/20 hover:border-primary/50 text-xs flex items-center gap-2"
+                                        >
+                                            <Expand className="w-3 h-3" />
+                                            View on Map
+                                        </Button>
+                                    </div>
+                                )}
                             </AnimatePresence>
 
-                            {/* Error Message */}
-                            {error && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center"
+                            <div className={cn("w-full md:w-auto", !estimatedPrice && "md:ml-auto")}>
+                                <Button
+                                    onClick={handleBooking}
+                                    className="w-full md:w-auto rounded-full px-10 py-6 text-base font-semibold shadow-gold relative overflow-hidden group bg-primary hover:bg-primary/90"
                                 >
-                                    {error}
-                                </motion.div>
-                            )}
+                                    <span className="relative z-10 text-white flex items-center gap-2">
+                                        {!selectedCar ? "Select a Car" : "Request Ride"}
+                                        <ArrowRightLeft className="w-4 h-4" />
+                                    </span>
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
 
-                            {/* Price and Submit */}
-                            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10">
-                                <AnimatePresence>
-                                    {estimatedPrice && (
-                                        <div className="flex flex-col md:flex-row items-center gap-4">
-                                            <motion.div
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 0.8 }}
-                                                className="flex items-center gap-3"
-                                            >
-                                                <div className="text-left">
-                                                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Estimated Base Fare</div>
-                                                    <div className="text-3xl font-bold text-primary">A$ {estimatedPrice}</div>
-                                                    {estimatedDistance && (
-                                                        <div className="text-xs text-muted-foreground mt-1">
-                                                            ~{estimatedDistance} km
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </motion.div>
+                    {/* Map Modal */}
+                    <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
+                        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-white/10">
+                            <DialogHeader className="p-6 border-b border-white/10 flex-shrink-0">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <DialogTitle className="text-2xl font-playfair font-bold">Route Preview</DialogTitle>
+                                        <DialogDescription className="text-muted-foreground mt-1 flex items-center gap-2">
+                                            <Route className="w-4 h-4 text-primary" />
+                                            {estimatedDistance ? `Total Distance: ${estimatedDistance} km` : 'Calculating route...'}
+                                        </DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+                            <div className="flex-grow relative">
+                                <MapPreview
+                                    fromCoords={
+                                        activeService === "airport" ? (flightType === "arrival" ? selectedAirport.coords : airportCoords) :
+                                            activeService === "distance" ? fromCoords :
+                                                activeService === "hourly" ? hourlyCoords :
+                                                    activeService === "special" ? specialCoords : null
+                                    }
+                                    toCoords={
+                                        activeService === "airport" ? (flightType === "arrival" ? airportCoords : selectedAirport.coords) :
+                                            activeService === "distance" ? toCoords : null
+                                    }
+                                    className="w-full h-full"
+                                    lineColor="#3b82f6" // Custom blue line as requested
+                                />
 
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setShowMapModal(true)}
-                                                className="rounded-full border-primary/20 hover:border-primary/50 text-xs flex items-center gap-2"
-                                            >
-                                                <Expand className="w-3 h-3" />
-                                                View on Map
-                                            </Button>
+                                {/* Legend / Info Overlay on Map */}
+                                <div className="absolute bottom-6 left-6 z-20 space-y-2 pointer-events-none">
+                                    <div className="bg-background/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-lg text-xs flex items-center gap-3">
+                                        <div className="flex items-center gap-2 font-medium">
+                                            <div className="w-3 h-3 rounded-full bg-[#B8A082]" />
+                                            Pickup
                                         </div>
-                                    )}
-                                </AnimatePresence>
-
-                                <div className={cn("w-full md:w-auto", !estimatedPrice && "md:ml-auto")}>
-                                    <Button
-                                        onClick={handleBooking}
-                                        className="w-full md:w-auto rounded-full px-10 py-6 text-base font-semibold shadow-gold relative overflow-hidden group bg-primary hover:bg-primary/90"
-                                    >
-                                        <span className="relative z-10 text-white flex items-center gap-2">
-                                            {!selectedCar ? "Select a Car" : "Request Ride"}
-                                            <ArrowRightLeft className="w-4 h-4" />
-                                        </span>
-                                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                                    </Button>
+                                        <div className="flex items-center gap-2 font-medium">
+                                            <div className="w-3 h-3 rounded-full bg-white border border-gray-400" />
+                                            Drop-off
+                                        </div>
+                                        <div className="flex items-center gap-2 font-medium">
+                                            <div className="w-6 h-1 rounded-full bg-[#3b82f6]" />
+                                            Route
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </Card>
-
-                        {/* Map Modal */}
-                        <Dialog open={showMapModal} onOpenChange={setShowMapModal}>
-                            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden bg-background/95 backdrop-blur-xl border-white/10">
-                                <DialogHeader className="p-6 border-b border-white/10 flex-shrink-0">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <DialogTitle className="text-2xl font-playfair font-bold">Route Preview</DialogTitle>
-                                            <DialogDescription className="text-muted-foreground mt-1 flex items-center gap-2">
-                                                <Route className="w-4 h-4 text-primary" />
-                                                {estimatedDistance ? `Total Distance: ${estimatedDistance} km` : 'Calculating route...'}
-                                            </DialogDescription>
-                                        </div>
-                                    </div>
-                                </DialogHeader>
-                                <div className="flex-grow relative">
-                                    <MapPreview
-                                        fromCoords={
-                                            activeService === "airport" ? (flightType === "arrival" ? selectedAirport.coords : airportCoords) :
-                                                activeService === "distance" ? fromCoords :
-                                                    activeService === "hourly" ? hourlyCoords :
-                                                        activeService === "special" ? specialCoords : null
-                                        }
-                                        toCoords={
-                                            activeService === "airport" ? (flightType === "arrival" ? airportCoords : selectedAirport.coords) :
-                                                activeService === "distance" ? toCoords : null
-                                        }
-                                        className="w-full h-full"
-                                        lineColor="#3b82f6" // Custom blue line as requested
-                                    />
-
-                                    {/* Legend / Info Overlay on Map */}
-                                    <div className="absolute bottom-6 left-6 z-20 space-y-2 pointer-events-none">
-                                        <div className="bg-background/80 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-lg text-xs flex items-center gap-3">
-                                            <div className="flex items-center gap-2 font-medium">
-                                                <div className="w-3 h-3 rounded-full bg-[#B8A082]" />
-                                                Pickup
-                                            </div>
-                                            <div className="flex items-center gap-2 font-medium">
-                                                <div className="w-3 h-3 rounded-full bg-white border border-gray-400" />
-                                                Drop-off
-                                            </div>
-                                            <div className="flex items-center gap-2 font-medium">
-                                                <div className="w-6 h-1 rounded-full bg-[#3b82f6]" />
-                                                Route
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                        </DialogContent>
+                    </Dialog>
 
 
 
-                    </div>
-                </motion.div>
-            </div>
+                </div>
+            </motion.div>
+        </div>
 
-            {/* Booking Modal */}
-            <AnimatePresence>
-                {showModal && (
+        {/* Booking Modal */}
+        <AnimatePresence>
+            {showModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm"
+                >
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 backdrop-blur-sm"
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="bg-card border border-border/50 rounded-2xl p-8 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto"
                     >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="bg-card border border-border/50 rounded-2xl p-8 w-full max-w-md shadow-2xl relative max-h-[90vh] overflow-y-auto"
+                        <button
+                            onClick={() => setShowModal(false)}
+                            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-white/10 rounded-full"
                         >
-                            <button
-                                onClick={() => setShowModal(false)}
-                                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-2 hover:bg-white/10 rounded-full"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                            <X className="w-5 h-5" />
+                        </button>
 
-                            {!bookingSuccess ? (
-                                <div className="space-y-6">
-                                    <div className="text-center space-y-2">
-                                        <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                            {activeService === "airport" && <Plane className="w-6 h-6 text-primary" />}
-                                            {activeService === "distance" && <Route className="w-6 h-6 text-primary" />}
-                                            {activeService === "hourly" && <Hourglass className="w-6 h-6 text-primary" />}
-                                            {activeService === "special" && <Sparkles className="w-6 h-6 text-primary" />}
-                                        </div>
-                                        <h3 className="text-2xl font-playfair font-bold">Complete Your Booking</h3>
-                                        <p className="text-sm text-muted-foreground">Confirm your details to receive contact information.</p>
+                        {!bookingSuccess ? (
+                            <div className="space-y-6">
+                                <div className="text-center space-y-2">
+                                    <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        {activeService === "airport" && <Plane className="w-6 h-6 text-primary" />}
+                                        {activeService === "distance" && <Route className="w-6 h-6 text-primary" />}
+                                        {activeService === "hourly" && <Hourglass className="w-6 h-6 text-primary" />}
+                                        {activeService === "special" && <Sparkles className="w-6 h-6 text-primary" />}
                                     </div>
-
-                                    {/* Booking Summary */}
-                                    {/* Booking Summary */}
-                                    <div className="bg-white/5 rounded-xl p-4 space-y-2 text-sm">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Service</span>
-                                            <span className="font-medium capitalize">{activeService} Transfer</span>
-                                        </div>
-                                        {selectedCar && (
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Vehicle</span>
-                                                <span className="font-medium">{getSelectedCarDetails()?.name}</span>
-                                            </div>
-                                        )}
-                                        {estimatedPrice && (
-                                            <div className="flex justify-between pt-2 border-t border-white/10">
-                                                <span className="text-muted-foreground">Estimated Total</span>
-                                                <span className="text-xl font-bold text-primary">
-                                                    A$ {calculateCarPrice(estimatedPrice)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full Name *</label>
-                                            <Input
-                                                placeholder="John Doe"
-                                                value={name}
-                                                onChange={(e) => setName(e.target.value)}
-                                                className="bg-background/50"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Phone Number *</label>
-                                            <Input
-                                                placeholder="+61 400 000 000"
-                                                value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
-                                                className="bg-background/50"
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email (Optional)</label>
-                                            <Input
-                                                placeholder="john@example.com"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="bg-background/50"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact Method</Label>
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={() => setContactMethod("whatsapp")}
-                                                    className={cn(
-                                                        "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
-                                                        contactMethod === "whatsapp"
-                                                            ? "bg-green-500/10 border-green-500/50 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
-                                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
-                                                    )}
-                                                >
-                                                    <MessageCircle className="w-4 h-4" />
-                                                    <span className="font-medium text-sm">WhatsApp</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => setContactMethod("sms")}
-                                                    className={cn(
-                                                        "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
-                                                        contactMethod === "sms"
-                                                            ? "bg-blue-500/10 border-blue-500/50 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
-                                                            : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
-                                                    )}
-                                                >
-                                                    <MessageSquare className="w-4 h-4" />
-                                                    <span className="font-medium text-sm">SMS</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {error && (
-                                        <p className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md">
-                                            {error}
-                                        </p>
-                                    )}
-
-                                    <Button
-                                        onClick={confirmBooking}
-                                        disabled={submitting}
-                                        className={cn(
-                                            "w-full py-7 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3",
-                                            contactMethod === "whatsapp" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
-                                        )}
-                                    >
-                                        {submitting ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <>
-                                                {contactMethod === "whatsapp" ? <MessageCircle className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-                                                Confirm & Send {contactMethod === "whatsapp" ? "WhatsApp" : "SMS"}
-                                            </>
-                                        )}
-                                    </Button>
+                                    <h3 className="text-2xl font-playfair font-bold">Complete Your Booking</h3>
+                                    <p className="text-sm text-muted-foreground">Confirm your details to receive contact information.</p>
                                 </div>
-                            ) : (
-                                <div className="text-center space-y-6 py-4">
-                                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-                                        <Check className="w-8 h-8 text-primary" />
+
+                                {/* Booking Summary */}
+                                {/* Booking Summary */}
+                                <div className="bg-white/5 rounded-xl p-4 space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Service</span>
+                                        <span className="font-medium capitalize">{activeService} Transfer</span>
+                                    </div>
+                                    {selectedCar && (
+                                        <div className="flex justify-between">
+                                            <span className="text-muted-foreground">Vehicle</span>
+                                            <span className="font-medium">{getSelectedCarDetails()?.name}</span>
+                                        </div>
+                                    )}
+                                    {estimatedPrice && (
+                                        <div className="flex justify-between pt-2 border-t border-white/10">
+                                            <span className="text-muted-foreground">Estimated Total</span>
+                                            <span className="text-xl font-bold text-primary">
+                                                A$ {calculateCarPrice(estimatedPrice)}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full Name *</label>
+                                        <Input
+                                            placeholder="John Doe"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            className="bg-background/50"
+                                        />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="text-2xl font-bold">Booking Request Sent!</h3>
-                                        <p className="text-muted-foreground">
-                                            Booking ID: <span className="font-mono text-foreground font-bold">{bookingId}</span>
-                                        </p>
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Phone Number *</label>
+                                        <Input
+                                            placeholder="+61 400 000 000"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            className="bg-background/50"
+                                        />
                                     </div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Great! Your WhatsApp message has been sent successfully. Please allow us a short moment to review your request — we will get back to you on WhatsApp shortly.
-                                    </p>
-                                    <Button
-                                        onClick={() => {
-                                            setShowModal(false);
-                                            setBookingSuccess(false);
-                                        }}
-                                        className="w-full py-4 rounded-xl"
-                                    >
-                                        Close
-                                    </Button>
-                                </div>
-                            )}
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email (Optional)</label>
+                                        <Input
+                                            placeholder="john@example.com"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            className="bg-background/50"
+                                        />
+                                    </div>
 
-            {/* Car Selection Modal */}
-            {/* Car Selection Modal */}
-            <CarSelectionModal
-                basePrice={estimatedPrice || 0}
-                fromLocation={
-                    activeService === "distance"
-                        ? fromLocation
-                        : activeService === "airport"
-                            ? airportAddress
-                            : activeService === "hourly"
-                                ? hourlyAddress
-                                : specialAddress
-                }
-                toLocation={
-                    activeService === "distance"
-                        ? toLocation
-                        : selectedAirport?.name || "Destination"
-                }
-            />
-        </section>
-    );
+                                    <div className="space-y-3">
+                                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact Method</Label>
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={() => setContactMethod("whatsapp")}
+                                                className={cn(
+                                                    "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
+                                                    contactMethod === "whatsapp"
+                                                        ? "bg-green-500/10 border-green-500/50 text-green-500 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                                                        : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                                )}
+                                            >
+                                                <MessageCircle className="w-4 h-4" />
+                                                <span className="font-medium text-sm">WhatsApp</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setContactMethod("sms")}
+                                                className={cn(
+                                                    "flex-1 py-3 px-4 rounded-xl border flex items-center justify-center gap-2 transition-all",
+                                                    contactMethod === "sms"
+                                                        ? "bg-blue-500/10 border-blue-500/50 text-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+                                                        : "bg-white/5 border-white/10 text-muted-foreground hover:border-white/20"
+                                                )}
+                                            >
+                                                <MessageSquare className="w-4 h-4" />
+                                                <span className="font-medium text-sm">SMS</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {error && (
+                                    <p className="text-red-500 text-xs text-center font-medium bg-red-500/10 py-2 rounded-md">
+                                        {error}
+                                    </p>
+                                )}
+
+                                <Button
+                                    onClick={confirmBooking}
+                                    disabled={submitting}
+                                    className={cn(
+                                        "w-full py-7 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3",
+                                        contactMethod === "whatsapp" ? "bg-green-600 hover:bg-green-700 text-white" : "bg-blue-600 hover:bg-blue-700 text-white"
+                                    )}
+                                >
+                                    {submitting ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            {contactMethod === "whatsapp" ? <MessageCircle className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
+                                            Confirm & Send {contactMethod === "whatsapp" ? "WhatsApp" : "SMS"}
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="text-center space-y-6 py-4">
+                                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                                    <Check className="w-8 h-8 text-primary" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-bold">Booking Request Sent!</h3>
+                                    <p className="text-muted-foreground">
+                                        Booking ID: <span className="font-mono text-foreground font-bold">{bookingId}</span>
+                                    </p>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Great! Your WhatsApp message has been sent successfully. Please allow us a short moment to review your request — we will get back to you on WhatsApp shortly.
+                                </p>
+                                <Button
+                                    onClick={() => {
+                                        setShowModal(false);
+                                        setBookingSuccess(false);
+                                    }}
+                                    className="w-full py-4 rounded-xl"
+                                >
+                                    Close
+                                </Button>
+                            </div>
+                        )}
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Car Selection Modal */}
+        {/* Car Selection Modal */}
+        <CarSelectionModal
+            basePrice={estimatedPrice || 0}
+            fromLocation={
+                activeService === "distance"
+                    ? fromLocation
+                    : activeService === "airport"
+                        ? airportAddress
+                        : activeService === "hourly"
+                            ? hourlyAddress
+                            : specialAddress
+            }
+            toLocation={
+                activeService === "distance"
+                    ? toLocation
+                    : selectedAirport?.name || "Destination"
+            }
+        />
+    </section>
+);
 }
